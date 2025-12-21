@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Hospital Backoffice</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<!-- AUTH CHECK -->
+<script>
+if (!localStorage.getItem("auth")) {
+  window.location.href = "index.html";
+}
+</script>
+
+<nav class="navbar navbar-dark bg-dark px-3">
+  <span class="navbar-brand">Hospital Backoffice</span>
+  <button class="btn btn-danger" onclick="logout()">Logout</button>
+</nav>
+
+<div class="container-fluid mt-3">
+
+<!-- DASHBOARD KPI -->
+<div class="row text-center mb-4">
+  <div class="col-md-2"><div class="card p-3">Patients<br><b id="kpiPatients">0</b></div></div>
+  <div class="col-md-2"><div class="card p-3">Médecins<br><b id="kpiDoctors">0</b></div></div>
+  <div class="col-md-2"><div class="card p-3">RDV<br><b id="kpiAppointments">0</b></div></div>
+  <div class="col-md-2"><div class="card p-3">Prescriptions<br><b id="kpiPrescriptions">0</b></div></div>
+  <div class="col-md-2"><div class="card p-3">Services<br><b id="kpiServices">0</b></div></div>
+</div>
+
+<!-- CHARTS -->
+<div class="row mb-4">
+  <div class="col-md-4"><canvas id="chart1"></canvas></div>
+  <div class="col-md-4"><canvas id="chart2"></canvas></div>
+  <div class="col-md-4"><canvas id="chart3"></canvas></div>
+  <div class="col-md-6 mt-4"><canvas id="chart4"></canvas></div>
+  <div class="col-md-6 mt-4"><canvas id="chart5"></canvas></div>
+</div>
+
+<hr>
+
+<!-- TABS -->
+<ul class="nav nav-tabs">
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#patients">Patients</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#doctors">Médecins</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#appointments">Rendez-vous</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#prescriptions">Prescriptions</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#services">Services</a></li>
+</ul>
+
+<div class="tab-content mt-3">
+
+<!-- ================= PATIENTS ================= -->
+<div class="tab-pane fade show active" id="patients">
+  <h4>Patients</h4>
+
+  <input id="pName" class="form-control mb-2" placeholder="Nom">
+  <input id="pAge" class="form-control mb-2" placeholder="Age">
+  <button class="btn btn-success" onclick="addPatient()">Ajouter</button>
+  <button class="btn btn-secondary" onclick="exportCSV(patients,'patients.csv')">Export CSV</button>
+
+  <table class="table mt-3">
+    <tbody id="patientsTable"></tbody>
+  </table>
+</div>
+
+<!-- ================= DOCTORS ================= -->
+<div class="tab-pane fade" id="doctors">
+  <h4>Médecins</h4>
+
+  <input id="dName" class="form-control mb-2" placeholder="Nom">
+  <input id="dSpec" class="form-control mb-2" placeholder="Spécialité">
+  <button class="btn btn-success" onclick="addDoctor()">Ajouter</button>
+
+  <table class="table mt-3">
+    <tbody id="doctorsTable"></tbody>
+  </table>
+</div>
+
+<!-- ================= APPOINTMENTS ================= -->
+<div class="tab-pane fade" id="appointments">
+  <h4>Rendez-vous</h4>
+
+  <input id="aPatient" class="form-control mb-2" placeholder="Patient">
+  <input id="aDate" type="date" class="form-control mb-2">
+  <button class="btn btn-success" onclick="addAppointment()">Ajouter</button>
+
+  <table class="table mt-3">
+    <tbody id="appointmentsTable"></tbody>
+  </table>
+</div>
+
+<!-- ================= PRESCRIPTIONS ================= -->
+<div class="tab-pane fade" id="prescriptions">
+  <h4>Prescriptions</h4>
+
+  <input id="prPatient" class="form-control mb-2" placeholder="Patient">
+  <input id="prMed" class="form-control mb-2" placeholder="Médicament">
+  <button class="btn btn-success" onclick="addPrescription()">Ajouter</button>
+
+  <table class="table mt-3">
+    <tbody id="prescriptionsTable"></tbody>
+  </table>
+</div>
+
+<!-- ================= SERVICES ================= -->
+<div class="tab-pane fade" id="services">
+  <h4>Services</h4>
+
+  <input id="sName" class="form-control mb-2" placeholder="Nom du service">
+  <button class="btn btn-success" onclick="addService()">Ajouter</button>
+
+  <table class="table mt-3">
+    <tbody id="servicesTable"></tbody>
+  </table>
+</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// DATA
+let patients = JSON.parse(localStorage.getItem("patients")) || [];
+let doctors = JSON.parse(localStorage.getItem("doctors")) || [];
+let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
+let prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
+let services = JSON.parse(localStorage.getItem("services")) || [];
+
+// PATIENTS CRUD
+function addPatient(){
+  patients.push({id:Date.now(),name:pName.value,age:pAge.value});
+  save();
+}
+function editPatient(id){
+  let p = patients.find(x=>x.id===id);
+  let name = prompt("Nom",p.name);
+  let age = prompt("Age",p.age);
+  if(name){p.name=name;p.age=age; save();}
+}
+function deletePatient(id){
+  if(confirm("Supprimer ?")){
+    patients = patients.filter(x=>x.id!==id);
+    save();
+  }
+}
+
+// DOCTORS
+function addDoctor(){
+  doctors.push({id:Date.now(),name:dName.value,spec:dSpec.value});
+  save();
+}
+function deleteDoctor(id){
+  doctors = doctors.filter(x=>x.id!==id); save();
+}
+
+// APPOINTMENTS
+function addAppointment(){
+  appointments.push({id:Date.now(),patient:aPatient.value,date:aDate.value});
+  save();
+}
+
+// PRESCRIPTIONS
+function addPrescription(){
+  prescriptions.push({id:Date.now(),patient:prPatient.value,med:prMed.value});
+  save();
+}
+
+// SERVICES
+function addService(){
+  services.push({id:Date.now(),name:sName.value});
+  save();
+}
+
+// SAVE & RENDER
+function save(){
+  localStorage.setItem("patients",JSON.stringify(patients));
+  localStorage.setItem("doctors",JSON.stringify(doctors));
+  localStorage.setItem("appointments",JSON.stringify(appointments));
+  localStorage.setItem("prescriptions",JSON.stringify(prescriptions));
+  localStorage.setItem("services",JSON.stringify(services));
+  render();
+}
+
+function render(){
+  patientsTable.innerHTML = patients.map(p=>`
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.age}</td>
+      <td>
+        <button onclick="editPatient(${p.id})">Edit</button>
+        <button onclick="deletePatient(${p.id})">Delete</button>
+      </td>
+    </tr>`).join("");
+
+  doctorsTable.innerHTML = doctors.map(d=>`
+    <tr><td>${d.name}</td><td>${d.spec}</td>
+    <td><button onclick="deleteDoctor(${d.id})">Delete</button></td></tr>`).join("");
+
+  appointmentsTable.innerHTML = appointments.map(a=>`
+    <tr><td>${a.patient}</td><td>${a.date}</td></tr>`).join("");
+
+  prescriptionsTable.innerHTML = prescriptions.map(p=>`
+    <tr><td>${p.patient}</td><td>${p.med}</td></tr>`).join("");
+
+  servicesTable.innerHTML = services.map(s=>`
+    <tr><td>${s.name}</td></tr>`).join("");
+
+  kpiPatients.textContent = patients.length;
+  kpiDoctors.textContent = doctors.length;
+  kpiAppointments.textContent = appointments.length;
+  kpiPrescriptions.textContent = prescriptions.length;
+  kpiServices.textContent = services.length;
+}
+
+function exportCSV(data,file){
+  let csv = Object.keys(data[0]||{}).join(",")+"\n";
+  data.forEach(d=>csv+=Object.values(d).join(",")+"\n");
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv]));
+  a.download=file;a.click();
+}
+
+function logout(){
+  localStorage.clear();
+  window.location.href="index.html";
+}
+
+// CHARTS
+new Chart(chart1,{type:'pie',data:{labels:['A','B'],datasets:[{data:[10,20]}]}});
+new Chart(chart2,{type:'bar',data:{labels:['Jan','Feb'],datasets:[{data:[5,9]}]}});
+new Chart(chart3,{type:'doughnut',data:{labels:['X','Y'],datasets:[{data:[7,3]}]}});
+new Chart(chart4,{type:'line',data:{labels:['1','2'],datasets:[{data:[2,6]}]}});
+new Chart(chart5,{type:'scatter',data:{datasets:[{data:[{x:1,y:2},{x:3,y:1}]}]}});
+
+render();
+</script>
+
+</body>
+</html>
