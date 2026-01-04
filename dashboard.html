@@ -2,244 +2,249 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Hospital Backoffice</title>
+<title>Gestion Hospitalière</title>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ===== BASE (existant, non modifié) ===== */
+body{margin:0;font-family:Arial}
+.menu{width:220px;background:#af1010;height:100vh;position:fixed;color:white;padding:10px}
+.menu a{display:block;color:white;padding:6px;text-decoration:none;background:#7a1c1c;margin-bottom:4px}
+.menu a:hover{background:#330404}
+.content{margin-left:230px;padding:15px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #aaa;padding:5px;text-align:center}
+input,select,button{margin:4px;padding:5px}
+
+/* ===== AJOUT CSS (AMÉLIORATION VISUELLE) ===== */
+body{
+  background: #f8f7f7;;
+}
+
+/* Menu */
+.menu h3{
+  text-align:center;
+  margin-bottom:15px;
+}
+.menu a{
+  border-radius:4px;
+  transition:0.3s;
+}
+
+/* Contenu */
+.content h2{
+  margin-top:0;
+  color:#1f2937;
+}
+
+/* Formulaires */
+input, select{
+  width:250px;
+  border:1px solid #ccc;
+  border-radius:4px;
+}
+button{
+  background:#5e0c0c;
+  color:white;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
+button:hover{
+  background:#380202;
+}
+
+/* Tableaux */
+table{
+  background:white;
+}
+th{
+  background:#800202;
+  color:white;
+}
+tr:nth-child(even){
+  background:#f1f5f9;
+}
+
+/* Boutons actions dans tableau */
+table button{
+  background:#5cfb00;
+  padding:4px 8px;
+}
+table button:last-child{
+  background:#db130f;
+}
+
+</style>
 </head>
 
 <body>
 
-<!-- AUTH CHECK -->
 <script>
-if (!localStorage.getItem("auth")) {
-  window.location.href = "index.html";
-}
+if(!localStorage.getItem("auth")) location.href="index.html";
 </script>
 
-<nav class="navbar navbar-dark bg-dark px-3">
-  <span class="navbar-brand">Hospital Backoffice</span>
-  <button class="btn btn-danger" onclick="logout()">Logout</button>
-</nav>
-
-<div class="container-fluid mt-3">
-
-<!-- DASHBOARD KPI -->
-<div class="row text-center mb-4">
-  <div class="col-md-2"><div class="card p-3">Patients<br><b id="kpiPatients">0</b></div></div>
-  <div class="col-md-2"><div class="card p-3">Médecins<br><b id="kpiDoctors">0</b></div></div>
-  <div class="col-md-2"><div class="card p-3">RDV<br><b id="kpiAppointments">0</b></div></div>
-  <div class="col-md-2"><div class="card p-3">Prescriptions<br><b id="kpiPrescriptions">0</b></div></div>
-  <div class="col-md-2"><div class="card p-3">Services<br><b id="kpiServices">0</b></div></div>
+<div class="menu">
+<h3>Menu</h3>
+<a href="?page=patients">Patients</a>
+<a href="?page=doctors">Médecins</a>
+<a href="?page=appointments">Rendez-vous</a>
+<a href="?page=prescriptions">Prescriptions</a>
+<a href="?page=services">Services</a>
+<a href="#" onclick="logout()">Logout</a>
 </div>
 
-<!-- CHARTS -->
-<div class="row mb-4">
-  <div class="col-md-4"><canvas id="chart1"></canvas></div>
-  <div class="col-md-4"><canvas id="chart2"></canvas></div>
-  <div class="col-md-4"><canvas id="chart3"></canvas></div>
-  <div class="col-md-6 mt-4"><canvas id="chart4"></canvas></div>
-  <div class="col-md-6 mt-4"><canvas id="chart5"></canvas></div>
-</div>
-
-<hr>
-
-<!-- TABS -->
-<ul class="nav nav-tabs">
-  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#patients">Patients</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#doctors">Médecins</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#appointments">Rendez-vous</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#prescriptions">Prescriptions</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#services">Services</a></li>
-</ul>
-
-<div class="tab-content mt-3">
-
-<!-- ================= PATIENTS ================= -->
-<div class="tab-pane fade show active" id="patients">
-  <h4>Patients</h4>
-
-  <input id="pName" class="form-control mb-2" placeholder="Nom">
-  <input id="pAge" class="form-control mb-2" placeholder="Age">
-  <button class="btn btn-success" onclick="addPatient()">Ajouter</button>
-  <button class="btn btn-secondary" onclick="exportCSV(patients,'patients.csv')">Export CSV</button>
-
-  <table class="table mt-3">
-    <tbody id="patientsTable"></tbody>
-  </table>
-</div>
-
-<!-- ================= DOCTORS ================= -->
-<div class="tab-pane fade" id="doctors">
-  <h4>Médecins</h4>
-
-  <input id="dName" class="form-control mb-2" placeholder="Nom">
-  <input id="dSpec" class="form-control mb-2" placeholder="Spécialité">
-  <button class="btn btn-success" onclick="addDoctor()">Ajouter</button>
-
-  <table class="table mt-3">
-    <tbody id="doctorsTable"></tbody>
-  </table>
-</div>
-
-<!-- ================= APPOINTMENTS ================= -->
-<div class="tab-pane fade" id="appointments">
-  <h4>Rendez-vous</h4>
-
-  <input id="aPatient" class="form-control mb-2" placeholder="Patient">
-  <input id="aDate" type="date" class="form-control mb-2">
-  <button class="btn btn-success" onclick="addAppointment()">Ajouter</button>
-
-  <table class="table mt-3">
-    <tbody id="appointmentsTable"></tbody>
-  </table>
-</div>
-
-<!-- ================= PRESCRIPTIONS ================= -->
-<div class="tab-pane fade" id="prescriptions">
-  <h4>Prescriptions</h4>
-
-  <input id="prPatient" class="form-control mb-2" placeholder="Patient">
-  <input id="prMed" class="form-control mb-2" placeholder="Médicament">
-  <button class="btn btn-success" onclick="addPrescription()">Ajouter</button>
-
-  <table class="table mt-3">
-    <tbody id="prescriptionsTable"></tbody>
-  </table>
-</div>
-
-<!-- ================= SERVICES ================= -->
-<div class="tab-pane fade" id="services">
-  <h4>Services</h4>
-
-  <input id="sName" class="form-control mb-2" placeholder="Nom du service">
-  <button class="btn btn-success" onclick="addService()">Ajouter</button>
-
-  <table class="table mt-3">
-    <tbody id="servicesTable"></tbody>
-  </table>
-</div>
-
-</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="content" id="app"></div>
 
 <script>
-// DATA
+// ================= STORAGE =================
 let patients = JSON.parse(localStorage.getItem("patients")) || [];
 let doctors = JSON.parse(localStorage.getItem("doctors")) || [];
 let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
 let prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
 let services = JSON.parse(localStorage.getItem("services")) || [];
+let editIndex = null;
 
-// PATIENTS CRUD
-function addPatient(){
-  patients.push({id:Date.now(),name:pName.value,age:pAge.value});
-  save();
+const page = new URLSearchParams(location.search).get("page");
+
+// ================= ROUTER =================
+if(page==="patients") patientsPage();
+else if(page==="doctors") doctorsPage();
+else if(page==="appointments") appointmentsPage();
+else if(page==="prescriptions") prescriptionsPage();
+else if(page==="services") servicesPage();
+else app.innerHTML="<h2>Bienvenue</h2>";
+
+// ================= PATIENTS =================
+function patientsPage(){
+app.innerHTML=`
+<h2>Patients</h2>
+<input id="nom" placeholder="Nom">
+<input id="age" placeholder="Age">
+<input id="tel" placeholder="Téléphone">
+<button onclick="savePatient()">Enregistrer</button>
+
+<table>
+<tr><th>Nom</th><th>Age</th><th>Téléphone</th><th>Actions</th></tr>
+${patients.map((p,i)=>`
+<tr>
+<td>${p.nom}</td><td>${p.age}</td><td>${p.tel}</td>
+<td>
+<button onclick="editPatient(${i})">Modifier</button>
+<button onclick="deleteItem(patients,${i},'patients')">Supprimer</button>
+</td>
+</tr>`).join("")}
+</table>`;
 }
-function editPatient(id){
-  let p = patients.find(x=>x.id===id);
-  let name = prompt("Nom",p.name);
-  let age = prompt("Age",p.age);
-  if(name){p.name=name;p.age=age; save();}
+function savePatient(){
+  if(editIndex==null) patients.push({nom:nom.value,age:age.value,tel:tel.value});
+  else { patients[editIndex]={nom:nom.value,age:age.value,tel:tel.value}; editIndex=null; }
+  localStorage.setItem("patients",JSON.stringify(patients));
+  patientsPage();
 }
-function deletePatient(id){
+function editPatient(i){
+  nom.value=patients[i].nom; age.value=patients[i].age; tel.value=patients[i].tel;
+  editIndex=i;
+}
+
+// ================= DOCTORS =================
+function doctorsPage(){
+app.innerHTML=`
+<h2>Médecins</h2>
+<input id="nom" placeholder="Nom">
+<input id="spec" placeholder="Spécialité">
+<button onclick="saveDoctor()">Enregistrer</button>
+
+<table>
+<tr><th>Nom</th><th>Spécialité</th><th>Actions</th></tr>
+${doctors.map((d,i)=>`
+<tr>
+<td>${d.nom}</td><td>${d.spec}</td>
+<td>
+<button onclick="editDoctor(${i})">Modifier</button>
+<button onclick="deleteItem(doctors,${i},'doctors')">Supprimer</button>
+</td>
+</tr>`).join("")}
+</table>`;
+}
+function saveDoctor(){
+  if(editIndex==null) doctors.push({nom:nom.value,spec:spec.value});
+  else { doctors[editIndex]={nom:nom.value,spec:spec.value}; editIndex=null; }
+  localStorage.setItem("doctors",JSON.stringify(doctors));
+  doctorsPage();
+}
+function editDoctor(i){
+  nom.value=doctors[i].nom; spec.value=doctors[i].spec;
+  editIndex=i;
+}
+
+// ================= RENDEZ-VOUS =================
+function appointmentsPage(){
+app.innerHTML=`
+<h2>Rendez-vous</h2>
+<select id="patient">${patients.map(p=>`<option>${p.nom}</option>`).join("")}</select>
+<select id="doctor">${doctors.map(d=>`<option>${d.nom}</option>`).join("")}</select>
+<input id="date" type="date">
+<button onclick="saveAppointment()">Ajouter</button>
+
+<table>
+<tr><th>Patient</th><th>Médecin</th><th>Date</th></tr>
+${appointments.map(a=>`<tr><td>${a.patient}</td><td>${a.doctor}</td><td>${a.date}</td></tr>`).join("")}
+</table>`;
+}
+function saveAppointment(){
+  appointments.push({patient:patient.value,doctor:doctor.value,date:date.value});
+  localStorage.setItem("appointments",JSON.stringify(appointments));
+  appointmentsPage();
+}
+
+// ================= PRESCRIPTIONS =================
+function prescriptionsPage(){
+app.innerHTML=`
+<h2>Prescriptions</h2>
+<select id="patient">${patients.map(p=>`<option>${p.nom}</option>`).join("")}</select>
+<select id="doctor">${doctors.map(d=>`<option>${d.nom}</option>`).join("")}</select>
+<input id="med" placeholder="Médicament">
+<button onclick="savePrescription()">Ajouter</button>
+
+<table>
+<tr><th>Patient</th><th>Médecin</th><th>Médicament</th></tr>
+${prescriptions.map(p=>`<tr><td>${p.patient}</td><td>${p.doctor}</td><td>${p.med}</td></tr>`).join("")}
+</table>`;
+}
+function savePrescription(){
+  prescriptions.push({patient:patient.value,doctor:doctor.value,med:med.value});
+  localStorage.setItem("prescriptions",JSON.stringify(prescriptions));
+  prescriptionsPage();
+}
+
+// ================= SERVICES =================
+function servicesPage(){
+app.innerHTML=`
+<h2>Services</h2>
+<input id="nom" placeholder="Service">
+<select id="doctor">${doctors.map(d=>`<option>${d.nom}</option>`).join("")}</select>
+<button onclick="saveService()">Ajouter</button>
+
+<table>
+<tr><th>Service</th><th>Médecin</th></tr>
+${services.map(s=>`<tr><td>${s.nom}</td><td>${s.doctor}</td></tr>`).join("")}
+</table>`;
+}
+function saveService(){
+  services.push({nom:nom.value,doctor:doctor.value});
+  localStorage.setItem("services",JSON.stringify(services));
+  servicesPage();
+}
+
+// ================= COMMON =================
+function deleteItem(arr,i,key){
   if(confirm("Supprimer ?")){
-    patients = patients.filter(x=>x.id!==id);
-    save();
+    arr.splice(i,1);
+    localStorage.setItem(key,JSON.stringify(arr));
+    location.reload();
   }
 }
-
-// DOCTORS
-function addDoctor(){
-  doctors.push({id:Date.now(),name:dName.value,spec:dSpec.value});
-  save();
-}
-function deleteDoctor(id){
-  doctors = doctors.filter(x=>x.id!==id); save();
-}
-
-// APPOINTMENTS
-function addAppointment(){
-  appointments.push({id:Date.now(),patient:aPatient.value,date:aDate.value});
-  save();
-}
-
-// PRESCRIPTIONS
-function addPrescription(){
-  prescriptions.push({id:Date.now(),patient:prPatient.value,med:prMed.value});
-  save();
-}
-
-// SERVICES
-function addService(){
-  services.push({id:Date.now(),name:sName.value});
-  save();
-}
-
-// SAVE & RENDER
-function save(){
-  localStorage.setItem("patients",JSON.stringify(patients));
-  localStorage.setItem("doctors",JSON.stringify(doctors));
-  localStorage.setItem("appointments",JSON.stringify(appointments));
-  localStorage.setItem("prescriptions",JSON.stringify(prescriptions));
-  localStorage.setItem("services",JSON.stringify(services));
-  render();
-}
-
-function render(){
-  patientsTable.innerHTML = patients.map(p=>`
-    <tr>
-      <td>${p.name}</td>
-      <td>${p.age}</td>
-      <td>
-        <button onclick="editPatient(${p.id})">Edit</button>
-        <button onclick="deletePatient(${p.id})">Delete</button>
-      </td>
-    </tr>`).join("");
-
-  doctorsTable.innerHTML = doctors.map(d=>`
-    <tr><td>${d.name}</td><td>${d.spec}</td>
-    <td><button onclick="deleteDoctor(${d.id})">Delete</button></td></tr>`).join("");
-
-  appointmentsTable.innerHTML = appointments.map(a=>`
-    <tr><td>${a.patient}</td><td>${a.date}</td></tr>`).join("");
-
-  prescriptionsTable.innerHTML = prescriptions.map(p=>`
-    <tr><td>${p.patient}</td><td>${p.med}</td></tr>`).join("");
-
-  servicesTable.innerHTML = services.map(s=>`
-    <tr><td>${s.name}</td></tr>`).join("");
-
-  kpiPatients.textContent = patients.length;
-  kpiDoctors.textContent = doctors.length;
-  kpiAppointments.textContent = appointments.length;
-  kpiPrescriptions.textContent = prescriptions.length;
-  kpiServices.textContent = services.length;
-}
-
-function exportCSV(data,file){
-  let csv = Object.keys(data[0]||{}).join(",")+"\n";
-  data.forEach(d=>csv+=Object.values(d).join(",")+"\n");
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv]));
-  a.download=file;a.click();
-}
-
-function logout(){
-  localStorage.clear();
-  window.location.href="index.html";
-}
-
-// CHARTS
-new Chart(chart1,{type:'pie',data:{labels:['A','B'],datasets:[{data:[10,20]}]}});
-new Chart(chart2,{type:'bar',data:{labels:['Jan','Feb'],datasets:[{data:[5,9]}]}});
-new Chart(chart3,{type:'doughnut',data:{labels:['X','Y'],datasets:[{data:[7,3]}]}});
-new Chart(chart4,{type:'line',data:{labels:['1','2'],datasets:[{data:[2,6]}]}});
-new Chart(chart5,{type:'scatter',data:{datasets:[{data:[{x:1,y:2},{x:3,y:1}]}]}});
-
-render();
+function logout(){ localStorage.clear(); location.href="index.html"; }
 </script>
 
 </body>
